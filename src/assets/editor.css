@@ -1,0 +1,133 @@
+/* Container for the ProseMirror editor */
+#editor {
+  position: relative;
+  background-color: #f9fafb; /* Light background */
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 300px;
+  overflow-y: auto;
+  transition: all 0.3s ease-in-out;
+}
+
+.ProseMirror {
+  min-height: 400px;
+}
+
+#editor:focus {
+  border-color: black; /* Blue border on focus */
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+/* Styling for annotations (highlighted text) */
+mark {
+  background-color: #b8cf5b; /* Soft green background for annotations */
+  color: #1d3b1a; /* Darker text color for visibility */
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+/* Hover effect for annotations */
+mark:hover {
+  background-color: #9ac04d; /* Slightly darker green */
+}
+
+/* Styling for the ProseMirror toolbar */
+.menubar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 16px;
+}
+
+.menuicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  margin-right: 10px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.menuicon:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.menuicon:active {
+  transform: scale(0.95);
+}
+
+button {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+button:focus {
+  outline: 2px solid #3b82f6; /* Blue focus ring */
+}
+
+/* Styling for the toolbar icons */
+.menuicon svg {
+  fill: #333;
+  width: 18px;
+  height: 18px;
+}
+
+/* Scrollbar styling for the editor */
+#editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+#editor::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#editor::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 10px;
+}
+
+#editor::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* General input styling */
+input[type='text'],
+input[type='number'],
+textarea {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  width: 100%;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+input[type='text']:focus,
+textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
