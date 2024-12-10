@@ -29,10 +29,8 @@ const MenuView = class {
 <script lang="ts" setup>
 import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
-import { DOMSerializer } from 'prosemirror-model'
 import { DOMParser as ProseMirrorDOMParser } from 'prosemirror-model'
 import { onMounted, ref, toRaw, nextTick } from 'vue'
-import { Button } from '../components/ui/button'
 import { schema, keyBoardPlugins } from '../schema'
 import { Plugin } from 'prosemirror-state'
 import { Transaction } from 'prosemirror-state'
@@ -43,40 +41,26 @@ import '../assets/editor.css'
 
 const props = defineProps<{
   linkedEntities: Array<Entity>
+  sourceText: string
 }>()
 
 const editorRef = ref<HTMLDivElement | null>(null)
 const editorView = ref<EditorView | null>(null)
-const sourceText = ref('ijwekjdwejdwegkhdkhgwedhkwedwedgk')
 const annotationSelected = ref(false)
 const selectionRange = ref<{ from: number; to: number } | null>(null)
 const errorMessage = ref('')
 const errorOccured = ref(false)
 
 const annotations = ref<
-  { annotationText: string; from: number; to: number; id: string; description: string }[]
+  { annotationText: string; from: number; to: number; id: string; comment: string }[]
 >([])
 const currentEditAnnotation = ref<{
   annotationText: string
   from: number
   to: number
   id: string
-  description: string
+  comment: string
 } | null>(null)
-
-// Save as HTML
-const saveToHTMLFile = () => {
-  if (editorView.value === null) return
-
-  const { doc } = editorView.value.state
-  const serializer = DOMSerializer.fromSchema(schema)
-  const domFragment = serializer.serializeFragment(doc.content)
-
-  const tempDiv = document.createElement('div')
-  tempDiv.appendChild(domFragment)
-  const htmlContent = tempDiv.innerHTML
-  console.log(htmlContent)
-}
 
 // Make a custom menu
 
@@ -133,7 +117,7 @@ function icon(text: string, name: string) {
   return span
 }
 
-const handleAddAnnotation = ({ id, description }: { id: string; description: string }) => {
+const handleAddAnnotation = ({ id, comment }: { id: string; comment: string }) => {
   try {
     if (!selectionRange.value || !editorView.value) {
       handleError('Editor view or selection range is not available.')
@@ -151,7 +135,7 @@ const handleAddAnnotation = ({ id, description }: { id: string; description: str
 
     const meta = JSON.stringify({
       id,
-      description,
+      comment,
     })
 
     const tr = state.tr.addMark(from, to, schema.marks.annotation.create({ meta }))
@@ -161,7 +145,7 @@ const handleAddAnnotation = ({ id, description }: { id: string; description: str
       from: from,
       to: to,
       id: id,
-      description: description,
+      comment: comment,
     })
     editorView.value.dispatch(tr)
 
@@ -185,7 +169,7 @@ const editAnnotation = (index: number) => {
     from: annotation.from,
     to: annotation.to,
     id: annotation.id,
-    description: annotation.description,
+    comment: annotation.comment,
   }
 
   annotationSelected.value = true
@@ -194,13 +178,13 @@ const editAnnotation = (index: number) => {
 // Handle saving the edited annotation
 const handleEditAnnotation = (updatedAnnotation: {
   id: string
-  description: string
+  comment: string
   annotationText: string
 }) => {
   if (currentEditAnnotation.value != null) {
     // Update the annotation in the array
     currentEditAnnotation.value.id = updatedAnnotation.id
-    currentEditAnnotation.value.description = updatedAnnotation.description
+    currentEditAnnotation.value.comment = updatedAnnotation.comment
     currentEditAnnotation.value.annotationText = updatedAnnotation.annotationText
 
     const annotationIndex = annotations.value.findIndex(
@@ -232,7 +216,7 @@ const updateEditorAnnotation = (annotation: any) => {
   const mark = schema.marks.annotation.create({
     meta: JSON.stringify({
       id: annotation.id,
-      description: annotation.description,
+      comment: annotation.comment,
     }),
   })
 
@@ -262,7 +246,7 @@ const extractAnnotations = (doc: any) => {
     from: number
     to: number
     id: string
-    description: string
+    comment: string
   }[] = []
 
   doc.descendants((node: any, pos: number) => {
@@ -276,7 +260,7 @@ const extractAnnotations = (doc: any) => {
               from: pos,
               to: pos + node.nodeSize,
               id: meta.id,
-              description: meta.description,
+              comment: meta.comment,
             })
           } catch (error) {
             handleError(`Failed to parse annotation meta data: ${error}.`)
@@ -293,30 +277,28 @@ const extractAnnotations = (doc: any) => {
 onMounted(async () => {
   await nextTick()
 
-  if (sourceText.value) {
-    const parser = new window.DOMParser()
-    const parsedDoc = parser.parseFromString(sourceText.value, 'text/html')
-    const doc = ProseMirrorDOMParser.fromSchema(schema).parse(parsedDoc.body)
+  const parser = new window.DOMParser()
+  const parsedDoc = parser.parseFromString(props.sourceText, 'text/html')
+  const doc = ProseMirrorDOMParser.fromSchema(schema).parse(parsedDoc.body)
 
-    const state = EditorState.create({
-      schema: schema,
-      doc: doc,
-      plugins: [
-        menuPlugin([annotateButton]),
-        keyBoardPlugins.historyPlugin,
-        keyBoardPlugins.undoRedoKeymap,
-        keyBoardPlugins.enterKeymap,
-        keyBoardPlugins.backspaceKeymap,
-      ],
+  const state = EditorState.create({
+    schema: schema,
+    doc: doc,
+    plugins: [
+      menuPlugin([annotateButton]),
+      keyBoardPlugins.historyPlugin,
+      keyBoardPlugins.undoRedoKeymap,
+      keyBoardPlugins.enterKeymap,
+      keyBoardPlugins.backspaceKeymap,
+    ],
+  })
+
+  if (editorRef.value) {
+    editorView.value = new EditorView(editorRef.value, {
+      state,
     })
 
-    if (editorRef.value) {
-      editorView.value = new EditorView(editorRef.value, {
-        state,
-      })
-
-      extractAnnotations(doc)
-    }
+    extractAnnotations(doc)
   }
 })
 
@@ -335,7 +317,7 @@ const handleError = (message: string) => {
   <div>
     <!-- ProseMirror Editor -->
     <div class="border" id="editor" ref="editorRef"></div>
-
+    <input name="annotation-source-text" type="hidden" value="" />
     <div v-if="errorOccured" class="pt-2 flex items-center text-red-600 font-semibold text-sm">
       <CircleAlertIcon class="mr-1" :size="16" />
       <span> Error: {{ errorMessage }} </span>
@@ -352,7 +334,7 @@ const handleError = (message: string) => {
           <div class="flex-1">
             <p class="text-sm font-medium text-gray-700">{{ annotation.annotationText }}</p>
             <p class="text-xs text-gray-500">
-              Entity ID: {{ annotation.id }} | Description: {{ annotation.description }}
+              Entity ID: {{ annotation.id }} | Comment: {{ annotation.comment }}
             </p>
           </div>
           <div class="flex items-center space-x-2">
@@ -373,11 +355,9 @@ const handleError = (message: string) => {
       </ul>
     </div>
 
-    <div v-else class="text-sm text-gray-500">No annotations have been added yet.</div>
     <div class="pb-2 text-sm text-gray-500" v-else>No annotations have been added yet.</div>
     <div class="py-2">
       <div>
-        <Button @click="saveToHTMLFile()">Save</Button>
         <EditorPopup
           @add-annotation="handleAddAnnotation"
           @cancel-annotation="handleCancelAnnotation"

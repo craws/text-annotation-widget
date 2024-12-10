@@ -13,5 +13,5 @@ export interface MenuItem {
 
 export interface Annotation {
   id: number
-  description: string
+  comment: string
 }

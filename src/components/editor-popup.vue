@@ -29,23 +29,22 @@ const props = defineProps<{
   triggerAnnotation: boolean
   annotation?: {
     id: string
-    description: string
+    comment: string
     annotationText: string
     from: number
     to: number
   }
 }>()
-
 const emit = defineEmits(['add-annotation', 'cancel-annotation', 'edit-annotation'])
 
 const addDisabled = ref(true)
 const dialogOpen = ref(false)
 const entityId = ref<string | undefined>(undefined)
-const description = ref<string>('')
+const comment = ref<string>('')
 const currentEditAnnotation = ref<
   | {
       id: string
-      description: string
+      comment: string
       annotationText: string
       from: number
       to: number
@@ -66,37 +65,37 @@ watch(
     currentEditAnnotation.value = newVal
     if (currentEditAnnotation.value) {
       entityId.value = currentEditAnnotation.value.id
-      description.value = currentEditAnnotation.value.description
+      comment.value = currentEditAnnotation.value.comment
     }
   },
 )
 
-watch([entityId, description], () => {
-  addDisabled.value = !(entityId.value != null || description.value != '')
+watch([entityId, comment], () => {
+  addDisabled.value = !(entityId.value != null || comment.value != '')
 })
 
 const handleAdd = () => {
   emit('add-annotation', {
     id: entityId.value,
-    description: description.value,
+    comment: comment.value,
   })
   entityId.value = undefined
-  description.value = ''
+  comment.value = ''
 }
 
 const handleCancel = () => {
   emit('cancel-annotation')
   entityId.value = undefined
-  description.value = ''
+  comment.value = ''
 }
 
 const handleEdit = () => {
   emit('edit-annotation', {
     id: entityId.value,
-    description: description.value,
+    comment: comment.value,
   })
   entityId.value = undefined
-  description.value = ''
+  comment.value = ''
 }
 </script>
 
@@ -126,11 +125,11 @@ const handleEdit = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
+          </div>
       <div class="grid w-full max-w-sm items-center gap-1.5">
         <label for="description" class="block text-sm font-medium">Description</label>
         <Input id="description" v-model="description" placeholder="Add description" />
-      </div>
+          </div>
       <AlertDialogFooter>
         <AlertDialogCancel @click="handleCancel()">Cancel</AlertDialogCancel>
         <div v-if="!currentEditAnnotation">

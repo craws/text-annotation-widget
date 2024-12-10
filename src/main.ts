@@ -1,10 +1,33 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './router'
-import './assets/index.css'
+import { createApp, ref } from 'vue'
+import ProseMirrorEditor from './components/prose-mirror-editor.vue'
+import './assets/tw.css'
 
-const app = createApp(App)
+//delete next line before build
+createTextAnnotationApp({ linkedEntities: [], sourceText: '' })
 
-app.use(router)
+export function createTextAnnotationApp({ linkedEntities = [], sourceText = '' }) {
+  const app = createApp({
+    components: { ProseMirrorEditor },
+    setup() {
+      const linkedEntitiesRef = ref(linkedEntities)
+      const sourceTextRef = ref(sourceText)
 
-app.mount('#app')
+      return {
+        linkedEntities: linkedEntitiesRef,
+        sourceText: sourceTextRef,
+      }
+    },
+    template: `
+      <div>
+        <ProseMirrorEditor
+          :linked-entities="linkedEntities"
+          :source-text="sourceText"
+        />
+      </div>
+    `,
+  })
+
+  console.log('Vue App created, mounting...')
+  app.mount('#app')
+  return app
+}

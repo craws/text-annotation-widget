@@ -14,7 +14,11 @@
 }
 
 .ProseMirror {
+  background-color: #ffffff;
   min-height: 400px;
+  padding: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
 }
 
 #editor:focus {
