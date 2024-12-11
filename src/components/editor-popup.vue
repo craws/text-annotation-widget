@@ -1,23 +1,5 @@
 <script setup lang="ts">
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '../components/ui/alert-dialog'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import '../assets/editor-pop-up.css'
 import { watch } from 'vue'
 
 import { ref } from 'vue'
@@ -100,45 +82,67 @@ const handleEdit = () => {
 </script>
 
 <template>
-  <AlertDialog v-model:open="dialogOpen">
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle>{{
-          props.annotation ? 'Edit Annotation' : 'Add Annotation'
-        }}</AlertDialogTitle>
-      </AlertDialogHeader>
-      <div class="w-full grid grid-rows-2">
-        <SelectLabel>Linked Entities</SelectLabel>
-        <Select v-model="entityId">
-          <SelectTrigger class="w-[180px]">
-            <SelectValue placeholder="Link an entity" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem
-                :value="entity.id.toString()"
-                v-for="entity in props.entities"
-                :key="entity.id"
-              >
-                {{ entity.id }}
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-          </div>
-      <div class="grid w-full max-w-sm items-center gap-1.5">
-        <label for="description" class="block text-sm font-medium">Description</label>
-        <Input id="description" v-model="description" placeholder="Add description" />
-          </div>
-      <AlertDialogFooter>
-        <AlertDialogCancel @click="handleCancel()">Cancel</AlertDialogCancel>
-        <div v-if="!currentEditAnnotation">
-          <AlertDialogAction :disabled="addDisabled" @click="handleAdd()">Add</AlertDialogAction>
+  <div v-if="dialogOpen" class="modal d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            {{ props.annotation ? 'Edit Annotation' : 'Add Annotation' }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Close"
+            @click="handleCancel()"
+          ></button>
         </div>
-        <div v-else>
-          <AlertDialogAction :disabled="addDisabled" @click="handleEdit()">Edit</AlertDialogAction>
+
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="linked-entities" class="form-label">Linked Entities</label>
+            <select id="linked-entities" v-model="entityId" class="form-select" required>
+              <option disabled value="">Link an entity</option>
+              <option v-for="entity in props.entities" :key="entity.id" :value="entity.id">
+                {{ entity.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="comment" class="form-label">Comment</label>
+            <textarea
+              id="comment"
+              v-model="comment"
+              class="form-control"
+              rows="4"
+              placeholder="Add comment"
+            ></textarea>
+          </div>
         </div>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="handleCancel()">Cancel</button>
+          <button
+            v-if="!currentEditAnnotation"
+            type="button"
+            :disabled="addDisabled"
+            @click="handleAdd()"
+            class="btn btn-primary"
+          >
+            Add
+          </button>
+          <button
+            v-else
+            type="button"
+            :disabled="addDisabled"
+            @click="handleEdit()"
+            class="btn btn-primary"
+          >
+            Edit
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade" :class="{ show: dialogOpen }" v-if="dialogOpen"></div>
 </template>

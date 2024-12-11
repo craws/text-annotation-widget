@@ -1,78 +1,110 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --ring: 0 0% 3.9%;
-
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --ring: 0 0% 83.1%;
-  }
+.editor-border {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  min-height: 150px;
+  background: #fff;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+.error-container {
+  padding-top: 10px;
+  display: flex;
+  align-items: center;
+  color: #dc2626;
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.error-container .icon {
+  margin-right: 5px;
+}
+
+.section-title {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.annotation-list {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.annotation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #f9f9f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  transition: background-color 0.3s;
+}
+
+.annotation-item:hover {
+  background: #f0f0f0;
+}
+
+.annotation-content {
+  flex: 1;
+}
+
+.annotation-text {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.annotation-meta {
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.annotation-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.edit-button,
+.delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.edit-button {
+  background: #e0f7ff;
+  color: #0077cc;
+  transition: background-color 0.3s;
+}
+
+.edit-button:hover {
+  background: #cceeff;
+  color: #005da3;
+}
+
+.delete-button {
+  background: #ffe6e6;
+  color: #cc0000;
+  transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+  background: #ffcccc;
+  color: #990000;
+}
+
+.no-annotations {
+  padding-bottom: 10px;
+  font-size: 0.875rem;
+  color: #555;
 }

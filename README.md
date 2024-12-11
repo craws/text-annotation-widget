@@ -1,58 +1,95 @@
-# text-annotation-test
+# Text Annotation Tool
 
-This template should help get you started developing with Vue 3 in Vite.
+A Vue 3 application that allows users to annotate text with entities and comments. Built with ProseMirror for rich text editing capabilities.
 
-## Recommended IDE Setup
+## Features
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Text Annotation**: Select text and link it to predefined entities
+- **Custom Comments**: Add comments to your annotations
+- **Entity Management**: Link annotations to predefined entities
+- **Annotation Management**: Edit and delete annotations with visual feedback
 
-## Type Support for `.vue` Imports in TS
+## Technology Stack
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- Vue 3 with TypeScript
+- ProseMirror for text editing
+- Bootstrap for UI components
+- Vite for build tooling
 
-## Customize configuration
+## Getting Started
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### Prerequisites
 
-## Project Setup
+- Node.js (v14 or higher)
+- pnpm package manager
+
+### Installation
 
 ```sh
+# Install dependencies
 pnpm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Start development server
 pnpm dev
+
+# Build for production
+pnpm vite build
 ```
 
-### Type-Check, Compile and Minify for Production
+### Build Output and Usage
 
-```sh
-pnpm build
+When you run `pnpm vite build`, the application will be built into the `dist/` directory with the following structure:
+
+```
+dist/
+├── text-annotation.iife.js     # Main bundled JavaScript file
+└── style.css                   # Compiled CSS
 ```
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+To use the built component in your project:
 
-```sh
-# Install browsers for the first run
-npx playwright install
+1. Copy the files from the `dist/` directory to your project
+2. Include the files in your HTML & use the component in your application:
 
-# When testing on CI, must build the project first
-pnpm build
-
-# Runs the end-to-end tests
-pnpm test:e2e
-# Runs the tests only on Chromium
-pnpm test:e2e --project=chromium
-# Runs the tests of a specific file
-pnpm test:e2e tests/example.spec.ts
-# Runs the tests in debug mode
-pnpm test:e2e --debug
+```html
+<link href="path/to/style.css" rel="stylesheet" />
+<script src="path/to/text-annotation.iife.js"></script>
+<div id="app"></div>
+<script>
+  const app = TextAnnotationEditor.createTextAnnotationApp({
+    linkedEntities: yourlinkedEntitiesArray || [],
+    sourceText: yourSourceText || '',
+  })
+</script>
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+The build configuration (in `vite.config.ts`) is set up to:
 
-```sh
-pnpm lint
-```
+- Bundle the application as an IIFE (Immediately Invoked Function Expression)
+- Externalize Bootstrap to reduce bundle size
+- Generate a single JavaScript file and CSS file
+- Make the component globally available as `TextAnnotationEditor`
+
+## License
+
+MIT License
+
+Copyright (c) 2024 [Olivia Reichl]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

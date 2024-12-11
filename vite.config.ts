@@ -4,7 +4,6 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import autoprefixer from 'autoprefixer'
-import tailwind from 'tailwindcss'
 import { resolve } from 'path'
 
 // https://vite.dev/config/
@@ -14,7 +13,7 @@ export default defineConfig({
   },
   css: {
     postcss: {
-      plugins: [tailwind(), autoprefixer()],
+      plugins: [autoprefixer()],
     },
   },
   plugins: [vue(), vueDevTools()],
@@ -34,10 +33,11 @@ export default defineConfig({
       fileName: (format) => `text-annotation.${format}.js`,
     },
     rollupOptions: {
-      external: ['vue'],
+      external: ['bootstrap'],
       output: {
         globals: {
           vue: 'Vue',
+          bootstrap: 'bootstrap',
         },
       },
     },
@@ -48,4 +48,3 @@ export default defineConfig({
     },
   },
 })
-// rollupOptions: external --> bootstrap, globals --> variables (alex)

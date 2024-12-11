@@ -31,11 +31,11 @@ import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { DOMParser as ProseMirrorDOMParser } from 'prosemirror-model'
 import { onMounted, ref, toRaw, nextTick } from 'vue'
+import { PencilIcon, Trash2Icon } from 'lucide-vue-next'
 import { schema, keyBoardPlugins } from '../schema'
 import { Plugin } from 'prosemirror-state'
 import { Transaction } from 'prosemirror-state'
 import { type Entity } from '../types'
-import { CircleAlertIcon, Trash2Icon, PencilIcon } from 'lucide-vue-next'
 import EditorPopup from './editor-popup.vue'
 import '../assets/editor.css'
 
@@ -54,6 +54,7 @@ const errorOccured = ref(false)
 const annotations = ref<
   { annotationText: string; from: number; to: number; id: string; comment: string }[]
 >([])
+
 const currentEditAnnotation = ref<{
   annotationText: string
   from: number
@@ -63,7 +64,6 @@ const currentEditAnnotation = ref<{
 } | null>(null)
 
 // Make a custom menu
-
 const menuPlugin = (items: MenuItem[]) => {
   return new Plugin({
     view(editorView) {
@@ -176,19 +176,16 @@ const editAnnotation = (index: number) => {
 }
 
 // Handle saving the edited annotation
-const handleEditAnnotation = (updatedAnnotation: {
-  id: string
-  comment: string
-  annotationText: string
-}) => {
+const handleEditAnnotation = (updatedAnnotation: { id: string; comment: string }) => {
   if (currentEditAnnotation.value != null) {
     // Update the annotation in the array
+    const originalId = currentEditAnnotation.value.id
+
     currentEditAnnotation.value.id = updatedAnnotation.id
     currentEditAnnotation.value.comment = updatedAnnotation.comment
-    currentEditAnnotation.value.annotationText = updatedAnnotation.annotationText
 
     const annotationIndex = annotations.value.findIndex(
-      (annotation) => annotation.id === currentEditAnnotation.value!.id,
+      (annotation) => annotation.id === originalId,
     )
 
     if (annotationIndex !== -1) {
@@ -198,10 +195,8 @@ const handleEditAnnotation = (updatedAnnotation: {
       }
     }
 
-    // Close the popup after saving
     annotationSelected.value = false
 
-    // Optionally: Update the editor view if necessary
     updateEditorAnnotation(currentEditAnnotation.value)
   }
 }
@@ -212,7 +207,6 @@ const updateEditorAnnotation = (annotation: any) => {
 
   const state = toRaw(editorView.value.state)
 
-  // Update mark based on the new annotation
   const mark = schema.marks.annotation.create({
     meta: JSON.stringify({
       id: annotation.id,
@@ -274,6 +268,36 @@ const extractAnnotations = (doc: any) => {
   annotations.value = annotationsArray
 }
 
+const updateAnnotationPositions = () => {
+  if (!editorView.value) return
+
+  const state = toRaw(editorView.value.state)
+  const newAnnotations: typeof annotations.value = []
+
+  state.doc.descendants((node, pos) => {
+    if (node.marks && node.marks.length > 0) {
+      node.marks.forEach((mark) => {
+        if (mark.type === schema.marks.annotation) {
+          try {
+            const meta = JSON.parse(mark.attrs.meta)
+            newAnnotations.push({
+              annotationText: node.text || state.doc.textBetween(pos, pos + node.nodeSize, ' '),
+              from: pos,
+              to: pos + node.nodeSize,
+              id: meta.id,
+              comment: meta.comment,
+            })
+          } catch (error) {
+            console.error('Error updating annotation positions:', error)
+          }
+        }
+      })
+    }
+  })
+
+  annotations.value = newAnnotations
+}
+
 onMounted(async () => {
   await nextTick()
 
@@ -290,6 +314,15 @@ onMounted(async () => {
       keyBoardPlugins.undoRedoKeymap,
       keyBoardPlugins.enterKeymap,
       keyBoardPlugins.backspaceKeymap,
+      new Plugin({
+        view(view) {
+          return {
+            update: () => {
+              updateAnnotationPositions()
+            },
+          }
+        },
+      }),
     ],
   })
 
@@ -315,37 +348,45 @@ const handleError = (message: string) => {
 
 <template>
   <div>
-    <!-- ProseMirror Editor -->
-    <div class="border" id="editor" ref="editorRef"></div>
-    <input name="annotation-source-text" type="hidden" value="" />
-    <div v-if="errorOccured" class="pt-2 flex items-center text-red-600 font-semibold text-sm">
-      <CircleAlertIcon class="mr-1" :size="16" />
-      <span> Error: {{ errorMessage }} </span>
+    <div id="editor" ref="editorRef" class="border p-3 mb-3"></div>
+
+    <div v-if="errorOccured" class="text-danger d-flex">
+      <span>{{ errorMessage }}</span>
     </div>
-    <h2 class="py-2 font-semibold">Annotations</h2>
+
+    <h2 class="y-4 fs-6 fw-bold">Annotations</h2>
 
     <div class="pb-2" v-if="annotations.length > 0">
-      <ul class="space-y-4 mt-2">
+      <ul class="list-unstyled mt-2">
         <li
           v-for="(annotation, index) in annotations"
           :key="annotation.id"
-          class="flex justify-between items-center p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 transition-colors"
+          class="d-flex justify-content-between align-items-center p-4 bg-light border rounded-lg shadow-sm hover-bg-light transition-colors"
         >
-          <div class="flex-1">
-            <p class="text-sm font-medium text-gray-700">{{ annotation.annotationText }}</p>
-            <p class="text-xs text-gray-500">
-              Entity ID: {{ annotation.id }} | Comment: {{ annotation.comment }}
+          <div class="flex-grow-1">
+            <p class="mb-1 fw-bold">{{ annotation.annotationText }}</p>
+            <p class="text-muted mb-0 small">
+              {{
+                [
+                  annotation.id != null ? `Entity ID: ${annotation.id}` : null,
+                  annotation.comment != null ? `Comment: ${annotation.comment}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' | ')
+              }}
             </p>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="d-flex align-items-center gap-2">
             <button
-              class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 hover:text-blue-700 text-blue-500 transition-colors"
+              type="button"
+              class="button-hover d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 p-2 text-primary transition"
               @click="editAnnotation(index)"
             >
               <PencilIcon :size="16" />
             </button>
             <button
-              class="flex items-center justify-center w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-600 transition-colors"
+              type="button"
+              class="button-hover d-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 p-2 text-danger transition"
               @click="removeAnnotation(index)"
             >
               <Trash2Icon :size="16" />
@@ -355,18 +396,17 @@ const handleError = (message: string) => {
       </ul>
     </div>
 
-    <div class="pb-2 text-sm text-gray-500" v-else>No annotations have been added yet.</div>
-    <div class="py-2">
-      <div>
-        <EditorPopup
-          @add-annotation="handleAddAnnotation"
-          @cancel-annotation="handleCancelAnnotation"
-          :triggerAnnotation="annotationSelected"
-          :entities="props.linkedEntities"
-          :annotation="currentEditAnnotation"
-          @edit-annotation="handleEditAnnotation"
-        />
-      </div>
+    <div v-else class="text-muted fs-6">No annotations have been added yet.</div>
+
+    <div>
+      <EditorPopup
+        @add-annotation="handleAddAnnotation"
+        @cancel-annotation="handleCancelAnnotation"
+        :triggerAnnotation="annotationSelected"
+        :entities="props.linkedEntities"
+        :annotation="currentEditAnnotation ?? undefined"
+        @edit-annotation="handleEditAnnotation"
+      />
     </div>
   </div>
 </template>

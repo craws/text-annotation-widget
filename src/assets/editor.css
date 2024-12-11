@@ -14,6 +14,7 @@
 }
 
 .ProseMirror {
+  white-space: pre-wrap;
   background-color: #ffffff;
   min-height: 400px;
   padding: 8px;
@@ -22,24 +23,21 @@
 }
 
 #editor:focus {
-  border-color: black; /* Blue border on focus */
+  border-color: black;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
-/* Styling for annotations (highlighted text) */
 mark {
-  background-color: #b8cf5b; /* Soft green background for annotations */
-  color: #1d3b1a; /* Darker text color for visibility */
+  background-color: #b8cf5b !important;
+  color: #1d3b1a;
   border-radius: 4px;
   padding: 0 4px;
 }
 
-/* Hover effect for annotations */
 mark:hover {
-  background-color: #9ac04d; /* Slightly darker green */
+  background-color: #9ac04d !important;
 }
 
-/* Styling for the ProseMirror toolbar */
 .menubar {
   background-color: #ffffff;
   border-bottom: 1px solid #ddd;
@@ -112,7 +110,6 @@ button:focus {
   background-color: #555;
 }
 
-/* General input styling */
 input[type='text'],
 input[type='number'],
 textarea {
@@ -134,4 +131,8 @@ textarea:focus {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.button-hover:hover {
+  opacity: 0.8;
 }

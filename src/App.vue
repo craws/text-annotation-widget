@@ -13,6 +13,10 @@ import { RouterView } from 'vue-router'
 </template>
 
 <style scoped>
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
 header {
   line-height: 1.5;
   max-height: 100vh;

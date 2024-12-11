@@ -1,9 +1,7 @@
 import { createApp, ref } from 'vue'
 import ProseMirrorEditor from './components/prose-mirror-editor.vue'
-import './assets/tw.css'
-
-//delete next line before build
-createTextAnnotationApp({ linkedEntities: [], sourceText: '' })
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 export function createTextAnnotationApp({ linkedEntities = [], sourceText = '' }) {
   const app = createApp({

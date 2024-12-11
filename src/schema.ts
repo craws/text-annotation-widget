@@ -1,9 +1,9 @@
-import { Schema, type NodeSpec, type MarkSpec } from "prosemirror-model";
-import { schema as basicSchema } from "prosemirror-schema-basic";
-import { undo, redo } from "prosemirror-history";
-import { keymap } from "prosemirror-keymap";
-import { history } from "prosemirror-history";
-
+import { Schema, type NodeSpec, type MarkSpec } from 'prosemirror-model'
+import { schema as basicSchema } from 'prosemirror-schema-basic'
+import { undo, redo } from 'prosemirror-history'
+import { keymap } from 'prosemirror-keymap'
+import { history } from 'prosemirror-history'
+import type { EditorView } from 'prosemirror-view'
 
 // Define custom annotation mark (MarkSpec)
 const annotationMark: MarkSpec = {
@@ -11,116 +11,102 @@ const annotationMark: MarkSpec = {
     meta: { default: null },
   },
   toDOM: (mark) => {
-    return [
-      "mark",
-      { meta: mark.attrs.meta },
-      0,
-    ];
+    return ['mark', { meta: mark.attrs.meta }, 0]
   },
   parseDOM: [
     {
-      tag: "mark[meta]",
+      tag: 'mark[meta]',
       getAttrs: (dom) => {
-        const meta = dom.getAttribute("meta");
-        return { meta };
+        const meta = dom.getAttribute('meta')
+        return { meta }
       },
     },
   ],
-};
+}
 
 // Convert marks to plain objects
 const marks: { [key: string]: MarkSpec } = {
   ...basicSchema.spec.marks,
   annotation: annotationMark,
-};
+}
 
 const nodes: { [key: string]: NodeSpec } = {
-  doc: { content: "block+" },
+  doc: { content: 'block+' },
   paragraph: {
-    ...basicSchema.spec.nodes.get("paragraph"),
-    marks: "_",
-    content: "inline*"
+    ...basicSchema.spec.nodes.get('paragraph'),
+    marks: '_',
+    content: 'inline*',
   },
   blockquote: {
-    ...basicSchema.spec.nodes.get("blockquote"),
-    marks: "_",
+    ...basicSchema.spec.nodes.get('blockquote'),
+    marks: '_',
   },
   text: {
-    ...basicSchema.spec.nodes.get("text"),
+    ...basicSchema.spec.nodes.get('text'),
   },
   hard_break: {
-    ...basicSchema.spec.nodes.get("hard_break"),
+    ...basicSchema.spec.nodes.get('hard_break'),
   },
-};
+}
 
 // Create the schema
 export const schema = new Schema({
   nodes,
-  marks
-});
+  marks,
+})
 
 export const keyBoardPlugins = {
   undoRedoKeymap: keymap({
-    "Mod-z": undo,
-    "Mod-Shift-z": redo,
+    'Mod-z': undo,
+    'Mod-Shift-z': redo,
   }),
   historyPlugin: history(),
   enterKeymap: keymap({
-    "Enter": (state, dispatch) => {
-      const { $from } = state.selection; // Current cursor position
-      const parent = $from.node($from.depth);
+    Enter: (state, dispatch) => {
+      const { $from } = state.selection
+      const parent = $from.node($from.depth)
 
-      // Only handle cases in paragraphs or textblocks
-      if (parent.type.name === "paragraph" || parent.isTextblock) {
+      if (parent.type.name === 'paragraph' || parent.isTextblock) {
         if (dispatch) {
-          // Check if at the end of the parent node
-          const atEnd = $from.parentOffset === $from.parent.content.size;
+          const atEnd = $from.parentOffset === $from.parent.content.size
 
           const tr = atEnd
-            ? state.tr.insert($from.pos, state.schema.nodes.hard_break.create()) // Insert hard_break at end
-            : state.tr.replaceSelectionWith(state.schema.nodes.hard_break.create()); // Insert normally
+            ? state.tr.insert($from.pos, state.schema.nodes.hard_break.create())
+            : state.tr.replaceSelectionWith(state.schema.nodes.hard_break.create())
 
-          dispatch(tr.scrollIntoView());
+          dispatch(tr.scrollIntoView())
         }
-        return true; // Signal that Enter was handled
+        return true
       }
 
-      return false; // Let other handlers process it
-    }
+      return false
+    },
   }),
   backspaceKeymap: keymap({
-    "Backspace": (state, dispatch) => {
-      const { $from } = state.selection; // Current cursor position
-      const parent = $from.node($from.depth); // Current parent node
+    Backspace: (state, dispatch) => {
+      const { $from } = state.selection
+      const parent = $from.node($from.depth)
 
-      // Check if the parent is a paragraph
-      if (parent.type.name === "paragraph") {
-        console.log("Backspace entered in:", parent.type.name);
-
-        // Case 1: Paragraph is empty
+      if (parent.type.name === 'paragraph') {
         if (parent.content.size === 0) {
-          console.log("Backspace: Deleting empty paragraph");
           if (dispatch) {
-            const tr = state.tr.delete($from.before(), $from.after());
-            dispatch(tr);
+            const tr = state.tr.delete($from.before(), $from.after())
+            dispatch(tr)
           }
-          return true; // Prevent default behavior
+          return true
         }
 
-        // Case 2: At the start of the paragraph
         if ($from.parentOffset === 0) {
-          console.log("Backspace: At the start of the paragraph");
-          // Prevent deletion of the paragraph itself, but handle cases like merging with the previous node
           if (dispatch) {
-            const prevPos = $from.before($from.depth);
-            const tr = state.tr.delete(prevPos - 1, $from.pos);
-            dispatch(tr);
+            const prevPos = $from.before($from.depth)
+            const tr = state.tr.delete(prevPos - 1, $from.pos)
+            dispatch(tr)
           }
-          return true; // Prevent default behavior
+          return true
         }
       }
 
-      return false; // Allow default behavior for other cases
-    }
+      return false
+    },
   }),
 }
