@@ -74,7 +74,7 @@ The build configuration (in `vite.config.ts`) is set up to:
 
 MIT License
 
-Copyright (c) 2024 [Olivia Reichl]
+Copyright (c) 2024 Olivia Reichl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
