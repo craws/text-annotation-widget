@@ -30,12 +30,12 @@ const MenuView = class {
 import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { DOMParser as ProseMirrorDOMParser } from 'prosemirror-model'
-import { onMounted, ref, toRaw, nextTick } from 'vue'
+import { onMounted, ref, toRaw, nextTick, computed } from 'vue'
 import { PencilIcon, Trash2Icon } from 'lucide-vue-next'
 import { schema, keyBoardPlugins } from '../schema'
 import { Plugin } from 'prosemirror-state'
 import { Transaction } from 'prosemirror-state'
-import { type Entity } from '../types'
+import { type Entity, type Annotation } from '../types'
 import EditorPopup from './editor-popup.vue'
 import '../assets/editor.css'
 
@@ -51,17 +51,15 @@ const selectionRange = ref<{ from: number; to: number } | null>(null)
 const errorMessage = ref('')
 const errorOccured = ref(false)
 
-const annotations = ref<
-  { annotationText: string; from: number; to: number; id: string; comment: string }[]
->([])
+const annotations = ref<Array<Annotation>>([])
 
-const currentEditAnnotation = ref<{
-  annotationText: string
-  from: number
-  to: number
-  id: string
-  comment: string
-} | null>(null)
+const currentEditAnnotation = ref<Annotation | null>(null)
+
+const sortedAnnotations = computed(() => {
+  return annotations.value.slice().sort((a, b) => {
+    return a.annotationText.localeCompare(b.annotationText)
+  })
+})
 
 // Make a custom menu
 const menuPlugin = (items: MenuItem[]) => {
@@ -117,7 +115,15 @@ function icon(text: string, name: string) {
   return span
 }
 
-const handleAddAnnotation = ({ id, comment }: { id: string; comment: string }) => {
+const handleAddAnnotation = ({
+  annotationId,
+  entityId,
+  comment,
+}: {
+  annotationId: string
+  entityId: string
+  comment: string
+}) => {
   try {
     if (!selectionRange.value || !editorView.value) {
       handleError('Editor view or selection range is not available.')
@@ -134,17 +140,19 @@ const handleAddAnnotation = ({ id, comment }: { id: string; comment: string }) =
     }
 
     const meta = JSON.stringify({
-      id,
+      annotationId,
+      entityId,
       comment,
     })
 
     const tr = state.tr.addMark(from, to, schema.marks.annotation.create({ meta }))
 
     annotations.value.push({
+      id: annotationId,
       annotationText: selectedText,
       from: from,
       to: to,
-      id: id,
+      entityId: entityId,
       comment: comment,
     })
     editorView.value.dispatch(tr)
@@ -154,6 +162,8 @@ const handleAddAnnotation = ({ id, comment }: { id: string; comment: string }) =
   } catch (error) {
     handleError(`Add annotation: ${error}`)
   }
+
+  console.log(annotations.value)
 }
 
 const handleCancelAnnotation = () => {
@@ -162,46 +172,47 @@ const handleCancelAnnotation = () => {
   currentEditAnnotation.value = null
 }
 
-const editAnnotation = (index: number) => {
-  const annotation = annotations.value[index]
-  currentEditAnnotation.value = {
-    annotationText: annotation.annotationText,
-    from: annotation.from,
-    to: annotation.to,
-    id: annotation.id,
-    comment: annotation.comment,
-  }
+const editAnnotation = (annotationId: string) => {
+  const annotation = annotations.value.find((a) => a.id === annotationId)
 
-  annotationSelected.value = true
-}
-
-// Handle saving the edited annotation
-const handleEditAnnotation = (updatedAnnotation: { id: string; comment: string }) => {
-  if (currentEditAnnotation.value != null) {
-    // Update the annotation in the array
-    const originalId = currentEditAnnotation.value.id
-
-    currentEditAnnotation.value.id = updatedAnnotation.id
-    currentEditAnnotation.value.comment = updatedAnnotation.comment
-
-    const annotationIndex = annotations.value.findIndex(
-      (annotation) => annotation.id === originalId,
-    )
-
-    if (annotationIndex !== -1) {
-      annotations.value[annotationIndex] = {
-        ...annotations.value[annotationIndex],
-        ...updatedAnnotation,
-      }
+  if (annotation) {
+    currentEditAnnotation.value = {
+      id: annotation.id,
+      annotationText: annotation.annotationText,
+      from: annotation.from,
+      to: annotation.to,
+      entityId: annotation.entityId,
+      comment: annotation.comment,
     }
 
-    annotationSelected.value = false
-
-    updateEditorAnnotation(currentEditAnnotation.value)
+    annotationSelected.value = true
+  } else {
+    handleError('Annotation not found.')
   }
 }
 
-// Update the editor view with the new annotation
+const handleEditAnnotation = (updatedAnnotation: { entityId: string; comment: string }) => {
+  if (currentEditAnnotation.value) {
+    const { id } = currentEditAnnotation.value
+
+    const existingAnnotation = annotations.value.find((annotation) => annotation.id === id)
+
+    if (existingAnnotation) {
+      existingAnnotation.entityId = updatedAnnotation.entityId
+      existingAnnotation.comment = updatedAnnotation.comment
+
+      // Update the mark in the editor view
+      updateEditorAnnotation(existingAnnotation)
+
+      // Reset the editing state
+      currentEditAnnotation.value = null
+      annotationSelected.value = false
+    } else {
+      handleError('Failed to find the annotation for editing.')
+    }
+  }
+}
+
 const updateEditorAnnotation = (annotation: any) => {
   if (editorView.value === null) return
 
@@ -209,7 +220,8 @@ const updateEditorAnnotation = (annotation: any) => {
 
   const mark = schema.marks.annotation.create({
     meta: JSON.stringify({
-      id: annotation.id,
+      annotationId: annotation.id,
+      entityId: annotation.entityId,
       comment: annotation.comment,
     }),
   })
@@ -221,81 +233,85 @@ const updateEditorAnnotation = (annotation: any) => {
   currentEditAnnotation.value = null
 }
 
-const removeAnnotation = (index: number) => {
-  const annotation = annotations.value[index]
+const removeAnnotation = (annotationId: string) => {
+  const annotationToRemove = annotations.value.find((a) => a.id === annotationId)
 
-  if (editorView.value === null) return
+  if (!editorView.value || !annotationToRemove) {
+    handleError('Annotation not found.')
+    return
+  }
 
   const state = toRaw(editorView.value.state)
-  const tr = state.tr.removeMark(annotation.from, annotation.to, schema.marks.annotation)
+  const tr = state.tr.removeMark(
+    annotationToRemove.from,
+    annotationToRemove.to,
+    schema.marks.annotation,
+  )
 
   editorView.value.dispatch(tr)
 
-  annotations.value.splice(index, 1)
+  annotations.value = annotations.value.filter((annotation) => annotation.id !== annotationId)
 }
 
 const extractAnnotations = (doc: any) => {
-  const annotationsArray: {
-    annotationText: string
-    from: number
-    to: number
-    id: string
-    comment: string
-  }[] = []
+  const extractedAnnotations: Array<Annotation> = []
 
   doc.descendants((node: any, pos: number) => {
-    if (node.marks && node.marks.length > 0) {
+    if (node.marks) {
       node.marks.forEach((mark: any) => {
         if (mark.type === schema.marks.annotation) {
           try {
             const meta = JSON.parse(mark.attrs.meta)
-            annotationsArray.push({
+            extractedAnnotations.push({
+              id: meta.annotationId,
               annotationText: doc.textBetween(pos, pos + node.nodeSize, ' '),
               from: pos,
               to: pos + node.nodeSize,
-              id: meta.id,
+              entityId: meta.id,
               comment: meta.comment,
             })
           } catch (error) {
-            handleError(`Failed to parse annotation meta data: ${error}.`)
+            console.error('Error extracting annotations:', error)
           }
         }
       })
     }
   })
 
-  // Update the annotations array
-  annotations.value = annotationsArray
+  annotations.value = extractedAnnotations
 }
 
-const updateAnnotationPositions = () => {
-  if (!editorView.value) return
+const updateAnnotationPositions = (view: EditorView) => {
+  if (!view) return
 
-  const state = toRaw(editorView.value.state)
-  const newAnnotations: typeof annotations.value = []
+  const state = toRaw(view.state)
+  const updatedAnnotations: Array<Annotation> = []
 
   state.doc.descendants((node, pos) => {
-    if (node.marks && node.marks.length > 0) {
+    if (node.marks) {
       node.marks.forEach((mark) => {
         if (mark.type === schema.marks.annotation) {
           try {
             const meta = JSON.parse(mark.attrs.meta)
-            newAnnotations.push({
-              annotationText: node.text || state.doc.textBetween(pos, pos + node.nodeSize, ' '),
-              from: pos,
-              to: pos + node.nodeSize,
-              id: meta.id,
-              comment: meta.comment,
-            })
+            const existingAnnotation = annotations.value.find((a) => a.id === meta.annotationId)
+            if (existingAnnotation) {
+              updatedAnnotations.push({
+                ...existingAnnotation,
+                annotationText: node.text || state.doc.textBetween(pos, pos + node.nodeSize, ' '),
+                from: pos,
+                to: pos + node.nodeSize,
+              })
+            }
           } catch (error) {
-            console.error('Error updating annotation positions:', error)
+            console.error('Error recalculating annotation positions:', error)
           }
         }
       })
     }
   })
 
-  annotations.value = newAnnotations
+  console.log(updatedAnnotations)
+  annotations.value = updatedAnnotations
 }
 
 onMounted(async () => {
@@ -318,7 +334,7 @@ onMounted(async () => {
         view(view) {
           return {
             update: () => {
-              updateAnnotationPositions()
+              updateAnnotationPositions(view)
             },
           }
         },
@@ -356,10 +372,10 @@ const handleError = (message: string) => {
 
     <h2 class="y-4 fs-6 fw-bold">Annotations</h2>
 
-    <div class="pb-2" v-if="annotations.length > 0">
+    <div class="pb-2" v-if="sortedAnnotations.length > 0">
       <ul class="list-unstyled mt-2">
         <li
-          v-for="(annotation, index) in annotations"
+          v-for="annotation in sortedAnnotations"
           :key="annotation.id"
           class="d-flex justify-content-between align-items-center p-4 bg-light border rounded-lg shadow-sm hover-bg-light transition-colors"
         >
@@ -368,8 +384,8 @@ const handleError = (message: string) => {
             <p class="text-muted mb-0 small">
               {{
                 [
-                  annotation.id != null ? `Entity ID: ${annotation.id}` : null,
-                  annotation.comment != null ? `Comment: ${annotation.comment}` : null,
+                  annotation.entityId != null ? `Entity ID: ${annotation.entityId}` : null,
+                  annotation.comment != '' ? `Comment: ${annotation.comment}` : null,
                 ]
                   .filter(Boolean)
                   .join(' | ')
@@ -380,14 +396,14 @@ const handleError = (message: string) => {
             <button
               type="button"
               class="button-hover d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 p-2 text-primary transition"
-              @click="editAnnotation(index)"
+              @click="editAnnotation(annotation.id)"
             >
               <PencilIcon :size="16" />
             </button>
             <button
               type="button"
               class="button-hover d-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 p-2 text-danger transition"
-              @click="removeAnnotation(index)"
+              @click="removeAnnotation(annotation.id)"
             >
               <Trash2Icon :size="16" />
             </button>

@@ -7,11 +7,15 @@ export interface Entity {
 }
 
 export interface MenuItem {
-  command: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView) => boolean // The ProseMirror command to execute when clicked
-  dom: HTMLElement // The DOM element representing the button in the toolbar
+  command: (state: EditorState, dispatch: (tr: Transaction) => void, view: EditorView) => boolean
+  dom: HTMLElement
 }
 
 export interface Annotation {
-  id: number
-  comment: string
+  id: string
+  annotationText: string
+  from: number
+  to: number
+  entityId?: string
+  comment?: string
 }

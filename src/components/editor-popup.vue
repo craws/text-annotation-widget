@@ -3,36 +3,21 @@ import '../assets/editor-pop-up.css'
 import { watch } from 'vue'
 
 import { ref } from 'vue'
-import type { Entity } from '../types'
+import type { Annotation, Entity } from '../types'
 
 // Props for linked entities
 const props = defineProps<{
   entities: Array<Entity>
   triggerAnnotation: boolean
-  annotation?: {
-    id: string
-    comment: string
-    annotationText: string
-    from: number
-    to: number
-  }
+  annotation?: Annotation
 }>()
 const emit = defineEmits(['add-annotation', 'cancel-annotation', 'edit-annotation'])
 
 const addDisabled = ref(true)
 const dialogOpen = ref(false)
 const entityId = ref<string | undefined>(undefined)
-const comment = ref<string>('')
-const currentEditAnnotation = ref<
-  | {
-      id: string
-      comment: string
-      annotationText: string
-      from: number
-      to: number
-    }
-  | undefined
->(undefined)
+const comment = ref<string | undefined>('')
+const currentEditAnnotation = ref<Annotation | undefined>(undefined)
 
 watch(
   () => props.triggerAnnotation,
@@ -46,7 +31,7 @@ watch(
   (newVal) => {
     currentEditAnnotation.value = newVal
     if (currentEditAnnotation.value) {
-      entityId.value = currentEditAnnotation.value.id
+      entityId.value = currentEditAnnotation.value.entityId
       comment.value = currentEditAnnotation.value.comment
     }
   },
@@ -58,7 +43,8 @@ watch([entityId, comment], () => {
 
 const handleAdd = () => {
   emit('add-annotation', {
-    id: entityId.value,
+    annotationId: crypto.randomUUID(),
+    entityId: entityId.value,
     comment: comment.value,
   })
   entityId.value = undefined
@@ -73,7 +59,7 @@ const handleCancel = () => {
 
 const handleEdit = () => {
   emit('edit-annotation', {
-    id: entityId.value,
+    entityId: entityId.value,
     comment: comment.value,
   })
   entityId.value = undefined

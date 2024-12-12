@@ -3,6 +3,8 @@ import ProseMirrorEditor from './components/prose-mirror-editor.vue'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
+createTextAnnotationApp({ linkedEntities: [{ id: 1, name: 'Church' }], sourceText: '' })
+
 export function createTextAnnotationApp({ linkedEntities = [], sourceText = '' }) {
   const app = createApp({
     components: { ProseMirrorEditor },
